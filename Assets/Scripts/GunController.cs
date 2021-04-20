@@ -16,6 +16,8 @@ public class GunController : MonoBehaviour
     [HideInInspector]
     public bool isFineSightMode = false;
 
+    public bool isEnemy = false;
+
     // 본래 포지션 값
     private Vector3 originPos;
 
@@ -36,20 +38,31 @@ public class GunController : MonoBehaviour
     [SerializeField]
     private GameObject hit_effect_prefab;
 
+    private StatusHP thestatusHP;
+    private MonsterHp1 monsterHp1;
+    private Pig1 thepig1;
+
     private void Start()
     {
         originPos = Vector3.zero;
         audioSource = GetComponent<AudioSource>();
         theCrosshair = FindObjectOfType<Crosshair>();
+        thestatusHP = FindObjectOfType<StatusHP>();
+        monsterHp1 = FindObjectOfType<MonsterHp1>();
+        thepig1 = FindObjectOfType<Pig1>();
     }
 
     // Update is called once per frame
     void Update()
     {
         GunFireRateCalc();
-        TryFire();
-        TryReload();
-        TryFineSight();
+        if (!Inventory.inventoryActivated)
+        {
+            TryFire();
+            TryReload();
+            TryFineSight();
+        }
+
     }
 
     private void GunFireRateCalc() // 연사속도 재계산
@@ -88,8 +101,19 @@ public class GunController : MonoBehaviour
         PlaySE(currentGun.fire_Sound);
         currentGun.muzzleFlash.Play();
         Hit();
-        if (hitInfo.transform.tag == "NPC")
-            hitInfo.transform.GetComponent<Pig>().Damage(1, transform.position);
+        if (hitInfo.transform.tag == "WeakCr")
+        {
+            hitInfo.transform.GetComponent<Weak>().Damage(1, transform.position);
+            monsterHp1.DecreaseHP(1);
+        }
+        else if(hitInfo.transform.tag == "Danger")
+        {
+            hitInfo.transform.GetComponent<Weak>().Damage(1, transform.position);
+        }
+        else if (hitInfo.transform.tag == "NPC")
+        {
+            hitInfo.transform.GetComponent<Pig1>().Damage(1, transform.position);
+        }
         StopAllCoroutines();
         StartCoroutine(RetroActionCoroutine());
     }
@@ -161,6 +185,9 @@ public class GunController : MonoBehaviour
         if (isFineSightMode)
             FineSight();
     }
+
+
+
 
     private void FineSight() // 정조준 가동
     {
@@ -239,6 +266,8 @@ public class GunController : MonoBehaviour
             }
         }
     }
+
+
 
     private void PlaySE(AudioClip _clip) // 사운드 재생
     {

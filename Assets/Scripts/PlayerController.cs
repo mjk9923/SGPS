@@ -50,6 +50,9 @@ public class PlayerController : MonoBehaviour
     private Rigidbody myRigid;
     private GunController theGunController;
     private Crosshair theCrosshair;
+    private StatusController thestatusController;
+    private StatusSP theStatusSP;
+
 
 
 
@@ -60,6 +63,8 @@ public class PlayerController : MonoBehaviour
         myRigid = GetComponent<Rigidbody>();
         theGunController = FindObjectOfType<GunController>();
         theCrosshair = FindObjectOfType<Crosshair>();
+        thestatusController = FindObjectOfType<StatusController>();
+        theStatusSP = FindObjectOfType<StatusSP>();
 
         // 초기화
         applySpeed = walkSpeed;
@@ -79,8 +84,11 @@ public class PlayerController : MonoBehaviour
         TryCrouch();
         Move();
         MoveCheck();
-        CameraRotation();
-        CharacterRotation();
+        if (!Inventory.inventoryActivated)
+        {
+            CameraRotation();
+            CharacterRotation();
+        }      
     }
 
     private void TryCrouch() // 앉기 시도
@@ -91,6 +99,13 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public bool GetRun()
+
+    {
+
+        return isRun;
+
+    }
     private void Crouch() // 앉기 동작
     {
         isCrouch = !isCrouch;
@@ -134,7 +149,7 @@ public class PlayerController : MonoBehaviour
 
     private void TryJump() // 점프 시도
     {
-        if (Input.GetKeyDown(KeyCode.Space) && isGround)
+        if (Input.GetKeyDown(KeyCode.Space) && isGround && theStatusSP.GetCurrentSP() > 0)
         {
             Jump();
         }
@@ -145,16 +160,17 @@ public class PlayerController : MonoBehaviour
         // 앉은 상태에서 점프 시 점프 해제
         if (isCrouch)
             Crouch();
+        theStatusSP.DecreaseStamina(300);
         myRigid.velocity = transform.up * jumpForce;
     }
 
-    private void TryRun() // 달리기 시도
+     void TryRun() // 달리기 시도
     {
-        if (Input.GetKey(KeyCode.LeftShift))
+        if (Input.GetKey(KeyCode.LeftShift) &&  theStatusSP.GetCurrentSP() > 0)
         {
             Running();
         }
-        if (Input.GetKeyUp(KeyCode.LeftShift))
+        if (Input.GetKeyUp(KeyCode.LeftShift) ||  theStatusSP.GetCurrentSP() <= 0)
         {
             RunningCancel();
         }
@@ -170,6 +186,7 @@ public class PlayerController : MonoBehaviour
 
         isRun = true;
         theCrosshair.RunningAnimation(isRun);
+        theStatusSP.DecreaseStamina(10);
         applySpeed = runSpeed;
     }
 
@@ -227,4 +244,5 @@ public class PlayerController : MonoBehaviour
 
         theCamera.transform.localEulerAngles = new Vector3(currentCameraRotationX, 0f, 0f);
     }
+
 }
